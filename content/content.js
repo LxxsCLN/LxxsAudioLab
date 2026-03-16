@@ -14,6 +14,10 @@ function suppress(durationMs) {
   setTimeout(() => { suppressCount = Math.max(0, suppressCount - 1); }, durationMs);
 }
 
+// Tracks off-DOM media (WhatsApp voice messages, etc.) that are currently playing.
+// These can't be found by querySelectorAll, so we track them separately.
+const offDomMedia = new Map();
+
 // Tracks whether the extension context is still valid.
 let contextValid = true;
 
@@ -66,6 +70,42 @@ window.addEventListener("message", (e) => {
       metrics: e.data.metrics,
     });
   }
+
+  // Off-DOM audio playback (WhatsApp voice messages, Slack, etc.)
+  if (e.data.type === "lxxs-offdom-play") {
+    const entry = {
+      tag: "audio",
+      src: e.data.src || e.data.id,
+      name: `Audio — ${e.data.pageTitle}`,
+      paused: false,
+      muted: false,
+      duration: e.data.duration,
+      currentTime: 0,
+    };
+    offDomMedia.set(entry.src, entry);
+    safeSendMessage({ type: "media-play", media: entry });
+  }
+
+  if (e.data.type === "lxxs-offdom-pause") {
+    const src = e.data.src || e.data.id;
+    const entry = offDomMedia.get(src);
+    if (entry) {
+      entry.paused = true;
+      offDomMedia.delete(src);
+    }
+    safeSendMessage({
+      type: "media-pause",
+      media: {
+        tag: "audio",
+        src,
+        name: `Audio — ${e.data.pageTitle || document.title}`,
+        paused: true,
+        muted: false,
+        duration: 0,
+        currentTime: 0,
+      },
+    });
+  }
 });
 
 function getMediaName(el) {
@@ -107,6 +147,11 @@ function scanForMedia() {
       found.push(describeMedia(el));
     }
   });
+
+  // Include off-DOM media (WhatsApp voice messages, etc.)
+  for (const entry of offDomMedia.values()) {
+    found.push(entry);
+  }
 
   if (found.length > 0) {
     safeSendMessage({ type: "media-detected", media: found });

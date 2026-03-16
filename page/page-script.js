@@ -158,5 +158,79 @@
   // Initial scan.
   scanAndHook();
 
+  // --- Off-DOM media interception ---
+  // Some apps (WhatsApp, Slack, etc.) play audio via `new Audio(url)` which
+  // creates an element that's never added to the DOM. Our querySelectorAll
+  // can't find it. We intercept HTMLMediaElement.prototype.play to catch these.
+
+  const trackedOffDom = new WeakSet();
+  let offDomIdCounter = 0;
+
+  const origPlay = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function (...args) {
+    const el = this;
+    const inDom = el.isConnected;
+
+    // Only intercept off-DOM elements — in-DOM ones are handled by the content script.
+    if (!inDom && !trackedOffDom.has(el)) {
+      trackedOffDom.add(el);
+      const id = `offdom-${offDomIdCounter++}`;
+      el._lxxsId = id;
+
+      // Wait for metadata to get duration, then report.
+      const report = () => {
+        // Skip very short sounds (< 1s) and muted elements.
+        if (el.duration && el.duration < 1) return;
+        if (el.muted || el.volume === 0) return;
+
+        window.postMessage({
+          type: "lxxs-offdom-play",
+          id,
+          duration: el.duration || 0,
+          src: el.currentSrc || el.src || id,
+          pageTitle: document.title || "Unknown",
+        }, "*");
+      };
+
+      if (el.readyState >= 1) {
+        report();
+      } else {
+        el.addEventListener("loadedmetadata", report, { once: true });
+      }
+
+      el.addEventListener("pause", () => {
+        window.postMessage({
+          type: "lxxs-offdom-pause",
+          id,
+          src: el.currentSrc || el.src || id,
+          pageTitle: document.title || "Unknown",
+        }, "*");
+      });
+
+      el.addEventListener("ended", () => {
+        window.postMessage({
+          type: "lxxs-offdom-pause",
+          id,
+          src: el.currentSrc || el.src || id,
+          pageTitle: document.title || "Unknown",
+        }, "*");
+      });
+
+      // Also detect play after pause (re-play).
+      el.addEventListener("play", () => {
+        if (el.muted || el.volume === 0) return;
+        window.postMessage({
+          type: "lxxs-offdom-play",
+          id: el._lxxsId,
+          duration: el.duration || 0,
+          src: el.currentSrc || el.src || el._lxxsId,
+          pageTitle: document.title || "Unknown",
+        }, "*");
+      });
+    }
+
+    return origPlay.apply(this, args);
+  };
+
   console.log("[LxxsAudioLab] Page script loaded — ready to hook audio.");
 })();
