@@ -103,13 +103,26 @@ function renderMedia(mediaList) {
       const stateLabel = m.paused ? "Paused" : "Playing";
       const btnLabel = m.paused ? "Play" : "Pause";
 
+      let classLabel = "";
+      let classCss = "classification";
+      let dbDisplay = "";
+      if (m.metrics && !m.paused) {
+        const db = m.metrics.rmsDb;
+        if (db <= -60) { classLabel = "Silent"; classCss = "classification silent"; }
+        else if (db <= -30) { classLabel = "Quiet"; classCss = "classification quiet"; }
+        else if (db <= -10) { classLabel = "Normal"; classCss = "classification normal"; }
+        else { classLabel = "Loud"; classCss = "classification loud"; }
+        dbDisplay = `${m.metrics.rmsDb} dB`;
+      }
+
       card.innerHTML = `
         <div class="media-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</div>
-        <div class="media-meta">&lt;${m.tag}&gt;</div>
+        <div class="media-meta">&lt;${m.tag}&gt;${m.metrics ? ` · ${m.metrics.sampleRate}Hz · ${m.metrics.channelCount}ch` : ""}</div>
         <div class="card-row">
           <div class="badges">
             <span class="badge ${stateClass}">${stateLabel}</span>
-            <span class="badge classification">—</span>
+            ${classLabel ? `<span class="badge ${classCss}">${classLabel}</span>` : `<span class="badge classification">—</span>`}
+            ${dbDisplay ? `<span class="badge classification">${dbDisplay}</span>` : ""}
           </div>
           <button class="btn-play-pause">${btnLabel}</button>
         </div>

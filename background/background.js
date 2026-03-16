@@ -4,6 +4,10 @@
 const tabMedia = new Map();
 const connectedPorts = [];
 
+// --- Audio metrics (from AudioWorklet) ---
+// Map of "tabId:src" → { rmsDb, peakDb, rms, peak, channelCount, sampleRate }
+const audioMetrics = new Map();
+
 // --- Audio focus stack ---
 let audioStack = [];
 let audioStackEnabled = false;
@@ -21,7 +25,8 @@ function getAllMedia() {
       const key = `${tabId}:${m.src}`;
       if (seen.has(key)) return;
       seen.add(key);
-      allMedia.push({ ...m, tabId, tabTitle: data.tabTitle, tabUrl: data.tabUrl });
+      const metrics = audioMetrics.get(`${tabId}:${m.src}`) || null;
+      allMedia.push({ ...m, tabId, tabTitle: data.tabTitle, tabUrl: data.tabUrl, metrics });
     });
   }
   return allMedia;
@@ -289,6 +294,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       overlayVisible: overlayVisible,
     });
     return true;
+  }
+
+  if (message.type === "audio-metrics") {
+    const key = `${tabId}:${message.src}`;
+    audioMetrics.set(key, message.metrics);
+    // Broadcast updated media (includes fresh metrics).
+    broadcastAllMedia();
+    return;
   }
 
   if (message.type === "jump-to-tab-from-content") {

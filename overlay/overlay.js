@@ -171,6 +171,28 @@
       const btnLabel = m.paused ? "Play" : "Pause";
       const domain = getDomain(m.tabUrl || "");
 
+      // Audio classification from metrics.
+      let classLabel = "";
+      let classColor = "";
+      let dbDisplay = "";
+      if (m.metrics && !m.paused) {
+        const db = m.metrics.rmsDb;
+        if (db <= -60) {
+          classLabel = "Silent";
+          classColor = "#666";
+        } else if (db <= -30) {
+          classLabel = "Quiet";
+          classColor = "#5b9bd5";
+        } else if (db <= -10) {
+          classLabel = "Normal";
+          classColor = "#4ec94e";
+        } else {
+          classLabel = "Loud";
+          classColor = "#e05050";
+        }
+        dbDisplay = `${m.metrics.rmsDb} dB`;
+      }
+
       card.innerHTML = `
         <div class="o-card-top">
           <span class="o-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
@@ -178,6 +200,8 @@
         </div>
         <div class="o-meta">
           <span class="o-badge ${stateClass}">${stateLabel}</span>
+          ${classLabel ? `<span class="o-badge" style="background:${classColor}22;color:${classColor}">${classLabel}</span>` : ""}
+          ${dbDisplay ? `<span class="o-tab-label">${dbDisplay}</span>` : ""}
           <span class="o-tab-label">${escapeHtml(domain || m.tabTitle || "")}</span>
         </div>
       `;
