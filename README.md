@@ -93,7 +93,6 @@ LxxsAudioLab/
 ├── popup/
 │   ├── popup.html             # Toolbar popup UI
 │   └── popup.js               # Popup logic — media list, stack, click-to-jump
-├── ext.md                     # Detailed project spec and roadmap
 └── README.md
 ```
 
@@ -114,12 +113,3 @@ Background Service Worker
     ↕ persistent port connections
 Popup (on-demand)
 ```
-
-## Technical Details
-
-See [ext.md](ext.md) for the full project specification, including:
-
-- DSP concepts (RMS, peak detection, gain smoothing)
-- AudioWorklet architecture
-- Implementation roadmap with phase breakdowns
-- Performance constraints and design tradeoffs
