@@ -1,0 +1,333 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>LxxsAudioLab</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        width: 360px;
+        max-height: 500px;
+        overflow-y: auto;
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 13px;
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 14px;
+      }
+
+      h1 {
+        font-size: 15px;
+        font-weight: 600;
+        color: #e0e0e0;
+        margin-bottom: 12px;
+      }
+
+      #status {
+        padding: 8px 12px;
+        background: #2d2d2d;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        color: #888;
+        font-size: 12px;
+      }
+
+      /* --- Audio Stack Section --- */
+      .stack-section {
+        margin-bottom: 14px;
+        padding: 10px 12px;
+        background: #252530;
+        border: 1px solid #3e3e4e;
+        border-radius: 6px;
+      }
+
+      .stack-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .stack-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .toggle {
+        position: relative;
+        width: 36px;
+        height: 20px;
+        cursor: pointer;
+      }
+
+      .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        inset: 0;
+        background: #3e3e3e;
+        border-radius: 10px;
+        transition: background 0.2s;
+      }
+
+      .toggle-slider::before {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        left: 2px;
+        top: 2px;
+        background: #888;
+        border-radius: 50%;
+        transition:
+          transform 0.2s,
+          background 0.2s;
+      }
+
+      .toggle input:checked + .toggle-slider {
+        background: #2a4a2a;
+      }
+
+      .toggle input:checked + .toggle-slider::before {
+        transform: translateX(16px);
+        background: #4ec94e;
+      }
+
+      .stack-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .stack-entry {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: #777;
+        padding: 3px 0;
+      }
+
+      .stack-entry:last-child {
+        color: #e0e0e0;
+        font-weight: 600;
+      }
+
+      .stack-pos {
+        color: #555;
+        min-width: 16px;
+        text-align: center;
+      }
+
+      .stack-entry:last-child .stack-pos {
+        color: #4ec94e;
+      }
+
+      .stack-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .stack-empty {
+        font-size: 11px;
+        color: #555;
+        font-style: italic;
+      }
+
+      .stack-disabled {
+        font-size: 11px;
+        color: #555;
+        font-style: italic;
+      }
+
+      /* --- Media List --- */
+      .tab-group {
+        margin-bottom: 14px;
+      }
+
+      .tab-header {
+        font-size: 11px;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+        padding-left: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .media-card {
+        background: #2d2d2d;
+        border: 1px solid #3e3e3e;
+        border-radius: 6px;
+        padding: 10px 12px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+
+      .media-card:hover {
+        border-color: #5e5e5e;
+        background: #333;
+      }
+
+      .media-name {
+        font-weight: 600;
+        color: #e0e0e0;
+        margin-bottom: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 13px;
+      }
+
+      .media-meta {
+        font-size: 11px;
+        color: #666;
+      }
+
+      .card-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 6px;
+      }
+
+      .badges {
+        display: flex;
+        gap: 6px;
+      }
+
+      .btn-play-pause {
+        background: none;
+        border: 1px solid #4e4e4e;
+        border-radius: 4px;
+        color: #aaa;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 10px;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          color 0.15s,
+          background 0.15s;
+        flex-shrink: 0;
+      }
+
+      .btn-play-pause:hover {
+        border-color: #7e7e7e;
+        color: #e0e0e0;
+        background: #3a3a3a;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .badge.playing {
+        background: #1a3a1a;
+        color: #4ec94e;
+      }
+
+      .badge.paused {
+        background: #3a3a1a;
+        color: #c9c94e;
+      }
+
+      .badge.classification {
+        background: #2a2a3a;
+        color: #888;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 30px 20px;
+        color: #555;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .shortcuts {
+        margin-top: 14px;
+        padding: 8px 12px;
+        background: #2d2d2d;
+        border-radius: 6px;
+        font-size: 11px;
+        color: #666;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .shortcuts kbd {
+        background: #3e3e3e;
+        color: #aaa;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-family: inherit;
+        font-size: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>LxxsAudioLab</h1>
+
+    <div class="stack-section">
+      <div class="stack-header">
+        <span class="stack-title">Overlay</span>
+        <label class="toggle">
+          <input type="checkbox" id="overlay-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="stack-section">
+      <div class="stack-header">
+        <span class="stack-title">Audio Focus Stack</span>
+        <label class="toggle">
+          <input type="checkbox" id="stack-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div id="stack-list"></div>
+    </div>
+
+    <div id="status">Scanning all tabs&hellip;</div>
+    <div id="media-list"></div>
+
+    <div class="shortcuts">
+      <span><kbd>Alt+Shift+P</kbd> Play / Pause current audio</span>
+      <span><kbd>Alt+Shift+J</kbd> Jump to the playing tab</span>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
