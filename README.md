@@ -1,10 +1,10 @@
-# LxxsAudioLab
+# AudioLab
 
 Real-time cross-tab media controller, web audio inspector, and loudness normalizer — built as a Chrome Extension (Manifest V3).
 
 ## What It Does
 
-LxxsAudioLab detects every `<audio>` and `<video>` element across your entire browser, shows you what's playing, and gives you control over all of it from one place — without leaving the page you're on.
+AudioLab detects every `<audio>` and `<video>` element across your entire browser, shows you what's playing, and gives you control over all of it from one place — without leaving the page you're on.
 
 It also hooks into the Web Audio pipeline to compute real-time audio metrics (RMS, peak, dBFS) and apply automatic loudness normalization.
 
@@ -50,7 +50,7 @@ Think of it as a **cross-tab media remote + audio DevTools**.
 1. Clone or download this repo
 2. Open `chrome://extensions` in Chrome
 3. Enable **Developer mode** (top-right toggle)
-4. Click **Load unpacked** and select the `LxxsAudioLab` folder
+4. Click **Load unpacked** and select the `AudioLab` folder
 5. The extension icon appears in your toolbar — click it to open the popup
 
 ## Overlay Controls
@@ -76,7 +76,7 @@ Shortcuts can be customized at `chrome://extensions/shortcuts`.
 ## Project Structure
 
 ```
-LxxsAudioLab/
+AudioLab/
 ├── manifest.json                  # Extension config (Manifest V3)
 ├── background/
 │   └── background.js              # Service worker — media tracking, audio stack, normalization, shortcuts

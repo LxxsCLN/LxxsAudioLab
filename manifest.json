@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "LxxsAudioLab",
+  "name": "AudioLab",
   "version": "0.1.0",
   "description": "Real-Time Web Audio Inspector + Loudness Normalizer",
   "permissions": ["scripting", "activeTab", "tabs"],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "LxxsAudioLab"
+    "default_title": "AudioLab"
   },
   "content_scripts": [
     {

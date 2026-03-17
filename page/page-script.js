@@ -24,7 +24,7 @@
         await sharedCtx.audioWorklet.addModule(workletUrl);
         workletReady = true;
       } catch (err) {
-        console.warn("[LxxsAudioLab] AudioWorklet failed:", err.message);
+        console.warn("[AudioLab] AudioWorklet failed:", err.message);
         workletReady = false;
       }
     }
@@ -60,7 +60,7 @@
       try {
         source = ctx.createMediaElementSource(el);
       } catch (err) {
-        console.warn("[LxxsAudioLab] Could not capture media element:", err.message);
+        console.warn("[AudioLab] Could not capture media element:", err.message);
         return;
       }
 
@@ -82,7 +82,7 @@
             }, "*");
           };
         } catch (err) {
-          console.warn("[LxxsAudioLab] AudioWorkletNode creation failed:", err.message);
+          console.warn("[AudioLab] AudioWorkletNode creation failed:", err.message);
         }
       }
 
@@ -100,8 +100,8 @@
       audioChains.set(el, { ctx, source, gainNode, analyzerNode });
 
       const name = el.title || el.getAttribute("aria-label") || document.title || "Unknown";
-      console.log(`[LxxsAudioLab] Audio chain created for: ${name}`);
-      console.log(`[LxxsAudioLab] Sample rate: ${ctx.sampleRate}Hz, State: ${ctx.state}`);
+      console.log(`[AudioLab] Audio chain created for: ${name}`);
+      console.log(`[AudioLab] Sample rate: ${ctx.sampleRate}Hz, State: ${ctx.state}`);
 
       // Notify the content script that hooking succeeded.
       window.postMessage({
@@ -112,7 +112,7 @@
       }, "*");
 
     } catch (err) {
-      console.error("[LxxsAudioLab] Failed to hook media element:", err);
+      console.error("[AudioLab] Failed to hook media element:", err);
     }
   }
 
@@ -264,5 +264,5 @@
     return origPlay.apply(this, args);
   };
 
-  console.log("[LxxsAudioLab] Page script loaded — ready to hook audio.");
+  console.log("[AudioLab] Page script loaded — ready to hook audio.");
 })();

@@ -31,7 +31,7 @@
 
   container.innerHTML = `
     <div class="overlay-header">
-      <span class="overlay-title">LxxsAudioLab</span>
+      <span class="overlay-title">AudioLab</span>
       <div class="overlay-controls">
         <button class="overlay-btn" data-action="settings" title="Settings">&#9881;</button>
         <button class="overlay-btn" data-action="collapse" title="Collapse">&#9660;</button>
