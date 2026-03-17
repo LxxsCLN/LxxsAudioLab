@@ -41,6 +41,20 @@
     <div class="overlay-body"></div>
     <div class="o-settings">
       <div class="o-setting-row">
+        <span class="o-setting-label">Normalize Loudness</span>
+        <span class="o-setting-controls">
+          <button class="o-expand-btn" data-expand="target-db" title="Advanced" style="background:none;border:none;color:#666;font-size:10px;cursor:pointer;padding:2px 4px">&#9660;</button>
+          <label class="o-toggle">
+            <input type="checkbox" data-setting="normalize" />
+            <span class="o-toggle-track"></span>
+          </label>
+        </span>
+      </div>
+      <div class="o-setting-row" data-row="target-db" style="display:none">
+        <span class="o-setting-label">Target: <span data-target-value>-14</span> dB</span>
+        <input type="range" data-setting="target-db" min="-30" max="-6" value="-14" style="width:80px;accent-color:#4ec94e" />
+      </div>
+      <div class="o-setting-row">
         <span class="o-setting-label">Audio Focus Stack</span>
         <label class="o-toggle">
           <input type="checkbox" data-setting="audio-stack" />
@@ -91,6 +105,10 @@
   const overlayToggle = container.querySelector(
     '[data-setting="show-overlay"]',
   );
+  const normalizeToggle = container.querySelector('[data-setting="normalize"]');
+  const targetDbSlider = container.querySelector('[data-setting="target-db"]');
+  const targetDbRow = container.querySelector('[data-row="target-db"]');
+  const targetDbValue = container.querySelector('[data-target-value]');
 
   stackToggle.addEventListener("change", () => {
     safeSend({
@@ -104,6 +122,32 @@
     const visible = overlayToggle.checked;
     host.style.display = visible ? "" : "none";
     safeSend({ type: "set-overlay-visible", visible });
+  });
+
+  const expandBtn = container.querySelector('[data-expand="target-db"]');
+  expandBtn.addEventListener("click", () => {
+    const visible = targetDbRow.style.display === "none";
+    targetDbRow.style.display = visible ? "" : "none";
+    expandBtn.innerHTML = visible ? "&#9650;" : "&#9660;";
+  });
+
+  normalizeToggle.addEventListener("change", () => {
+    const enabled = normalizeToggle.checked;
+    safeSend({
+      type: "set-setting",
+      key: "normalize",
+      value: enabled,
+    });
+  });
+
+  targetDbSlider.addEventListener("input", () => {
+    const val = parseInt(targetDbSlider.value, 10);
+    targetDbValue.textContent = val;
+    safeSend({
+      type: "set-setting",
+      key: "target-db",
+      value: val,
+    });
   });
 
   // --- Dragging ---
@@ -176,7 +220,7 @@
       let classColor = "";
       let dbDisplay = "";
       if (m.metrics && !m.paused) {
-        const db = m.metrics.rmsDb;
+        const db = m.metrics.smoothedDb ?? m.metrics.rmsDb;
         if (db <= -60) {
           classLabel = "Silent";
           classColor = "#666";
@@ -190,7 +234,7 @@
           classLabel = "Loud";
           classColor = "#e05050";
         }
-        dbDisplay = `${m.metrics.rmsDb} dB`;
+        dbDisplay = `${db} dB`;
       }
 
       card.innerHTML = `
@@ -201,7 +245,7 @@
         <div class="o-meta">
           <span class="o-badge ${stateClass}">${stateLabel}</span>
           ${classLabel ? `<span class="o-badge" style="background:${classColor}22;color:${classColor}">${classLabel}</span>` : ""}
-          ${dbDisplay ? `<span class="o-tab-label">${dbDisplay}</span>` : ""}
+          ${dbDisplay ? `<span class="o-tab-label" style="min-width:45px">${dbDisplay}</span>` : ""}
           <span class="o-tab-label">${escapeHtml(domain || m.tabTitle || "")}</span>
         </div>
       `;
@@ -241,6 +285,13 @@
         host.style.display = response.overlayVisible ? "" : "none";
         overlayToggle.checked = response.overlayVisible;
       }
+      if (typeof response.normalizeEnabled === "boolean") {
+        normalizeToggle.checked = response.normalizeEnabled;
+      }
+      if (typeof response.targetDb === "number") {
+        targetDbSlider.value = response.targetDb;
+        targetDbValue.textContent = response.targetDb;
+      }
     });
   }
 
@@ -257,6 +308,11 @@
     if (msg.type === "set-overlay-display") {
       host.style.display = msg.visible ? "" : "none";
       overlayToggle.checked = msg.visible;
+    }
+    if (msg.type === "normalize-state") {
+      normalizeToggle.checked = msg.enabled;
+      targetDbSlider.value = msg.targetDb;
+      targetDbValue.textContent = msg.targetDb;
     }
   });
 

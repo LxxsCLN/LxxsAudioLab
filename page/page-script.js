@@ -158,6 +158,38 @@
   // Initial scan.
   scanAndHook();
 
+  // --- Normalization commands from content script ---
+  window.addEventListener("message", (e) => {
+    if (e.source !== window) return;
+
+    if (e.data.type === "lxxs-set-normalize") {
+      // Forward to all hooked AudioWorklet nodes.
+      const elements = document.querySelectorAll("audio, video");
+      elements.forEach((el) => {
+        const chain = audioChains.get(el);
+        if (chain && chain.analyzerNode) {
+          chain.analyzerNode.port.postMessage({
+            type: "set-normalize",
+            enabled: e.data.enabled,
+          });
+        }
+      });
+    }
+
+    if (e.data.type === "lxxs-set-target-db") {
+      const elements = document.querySelectorAll("audio, video");
+      elements.forEach((el) => {
+        const chain = audioChains.get(el);
+        if (chain && chain.analyzerNode) {
+          chain.analyzerNode.port.postMessage({
+            type: "set-target-db",
+            value: e.data.value,
+          });
+        }
+      });
+    }
+  });
+
   // --- Off-DOM media interception ---
   // Some apps (WhatsApp, Slack, etc.) play audio via `new Audio(url)` which
   // creates an element that's never added to the DOM. Our querySelectorAll

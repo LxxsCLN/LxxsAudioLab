@@ -204,6 +204,14 @@ try {
         el.play().catch(() => {});
       }
     }
+
+    // Normalization commands — forward to the page script.
+    if (msg.type === "set-normalize") {
+      window.postMessage({ type: "lxxs-set-normalize", enabled: msg.enabled }, "*");
+    }
+    if (msg.type === "set-target-db") {
+      window.postMessage({ type: "lxxs-set-target-db", value: msg.value }, "*");
+    }
   });
 } catch {
   shutdown();

@@ -15,6 +15,10 @@ let audioStackEnabled = false;
 // --- Overlay state ---
 let overlayVisible = false;
 
+// --- Normalization state ---
+let normalizeEnabled = false;
+let targetDb = -14;
+
 // --- Helpers ---
 
 function getAllMedia() {
@@ -65,6 +69,32 @@ function broadcastOverlay() {
       }).catch(() => {});
     }
   });
+}
+
+function broadcastNormalize() {
+  // Send to all tabs (worklets).
+  chrome.tabs.query({}, (tabs) => {
+    for (const tab of tabs) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: "set-normalize",
+        enabled: normalizeEnabled,
+      }).catch(() => {});
+    }
+  });
+  // Sync to popup and overlay.
+  broadcast({ type: "normalize-state", enabled: normalizeEnabled, targetDb });
+}
+
+function broadcastTargetDb() {
+  chrome.tabs.query({}, (tabs) => {
+    for (const tab of tabs) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: "set-target-db",
+        value: targetDb,
+      }).catch(() => {});
+    }
+  });
+  broadcast({ type: "normalize-state", enabled: normalizeEnabled, targetDb });
 }
 
 function jumpToTab(tabId) {
@@ -255,8 +285,19 @@ chrome.runtime.onConnect.addListener((port) => {
         src,
       }).catch(() => {});
     }
+    if (msg.type === "set-setting-from-popup") {
+      if (msg.key === "normalize") {
+        normalizeEnabled = msg.value;
+        broadcastNormalize();
+      }
+      if (msg.key === "target-db") {
+        targetDb = msg.value;
+        broadcastTargetDb();
+      }
+    }
     if (msg.type === "get-overlay-state") {
       port.postMessage({ type: "overlay-state", visible: overlayVisible });
+      port.postMessage({ type: "normalize-state", enabled: normalizeEnabled, targetDb });
     }
     if (msg.type === "set-overlay-visible") {
       overlayVisible = msg.visible;
@@ -292,6 +333,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       media: getAllMedia(),
       stackEnabled: audioStackEnabled,
       overlayVisible: overlayVisible,
+      normalizeEnabled: normalizeEnabled,
+      targetDb: targetDb,
     });
     return true;
   }
@@ -348,6 +391,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }).catch(() => {});
         }
       });
+    }
+    if (message.key === "normalize") {
+      normalizeEnabled = message.value;
+      broadcastNormalize();
+    }
+    if (message.key === "target-db") {
+      targetDb = message.value;
+      broadcastTargetDb();
     }
     return;
   }

@@ -6,6 +6,10 @@ const stackListEl = document.getElementById("stack-list");
 const stackToggle = document.getElementById("stack-toggle");
 
 const overlayToggle = document.getElementById("overlay-toggle");
+const normalizeToggle = document.getElementById("normalize-toggle");
+const targetDbSlider = document.getElementById("target-db-slider");
+const targetDbRow = document.getElementById("target-db-row");
+const targetDbValue = document.getElementById("target-db-value");
 
 const port = chrome.runtime.connect({ name: "popup" });
 port.postMessage({ type: "get-all-media" });
@@ -107,12 +111,12 @@ function renderMedia(mediaList) {
       let classCss = "classification";
       let dbDisplay = "";
       if (m.metrics && !m.paused) {
-        const db = m.metrics.rmsDb;
+        const db = m.metrics.smoothedDb ?? m.metrics.rmsDb;
         if (db <= -60) { classLabel = "Silent"; classCss = "classification silent"; }
         else if (db <= -30) { classLabel = "Quiet"; classCss = "classification quiet"; }
         else if (db <= -10) { classLabel = "Normal"; classCss = "classification normal"; }
         else { classLabel = "Loud"; classCss = "classification loud"; }
-        dbDisplay = `${m.metrics.rmsDb} dB`;
+        dbDisplay = `${db} dB`;
       }
 
       card.innerHTML = `
@@ -122,7 +126,7 @@ function renderMedia(mediaList) {
           <div class="badges">
             <span class="badge ${stateClass}">${stateLabel}</span>
             ${classLabel ? `<span class="badge ${classCss}">${classLabel}</span>` : `<span class="badge classification">—</span>`}
-            ${dbDisplay ? `<span class="badge classification">${dbDisplay}</span>` : ""}
+            ${dbDisplay ? `<span class="badge classification" style="min-width:58px">${dbDisplay}</span>` : ""}
           </div>
           <button class="btn-play-pause">${btnLabel}</button>
         </div>
@@ -167,6 +171,24 @@ overlayToggle.addEventListener("change", () => {
   port.postMessage({ type: "set-overlay-visible", visible: overlayToggle.checked });
 });
 
+const normalizeExpand = document.getElementById("normalize-expand");
+normalizeExpand.addEventListener("click", () => {
+  const visible = targetDbRow.style.display === "none";
+  targetDbRow.style.display = visible ? "" : "none";
+  normalizeExpand.innerHTML = visible ? "&#9650;" : "&#9660;";
+});
+
+normalizeToggle.addEventListener("change", () => {
+  const enabled = normalizeToggle.checked;
+  port.postMessage({ type: "set-setting-from-popup", key: "normalize", value: enabled });
+});
+
+targetDbSlider.addEventListener("input", () => {
+  const val = parseInt(targetDbSlider.value, 10);
+  targetDbValue.textContent = val;
+  port.postMessage({ type: "set-setting-from-popup", key: "target-db", value: val });
+});
+
 // --- Listen for updates ---
 
 port.onMessage.addListener((msg) => {
@@ -178,5 +200,10 @@ port.onMessage.addListener((msg) => {
   }
   if (msg.type === "overlay-state") {
     overlayToggle.checked = msg.visible;
+  }
+  if (msg.type === "normalize-state") {
+    normalizeToggle.checked = msg.enabled;
+    targetDbSlider.value = msg.targetDb;
+    targetDbValue.textContent = msg.targetDb;
   }
 });
