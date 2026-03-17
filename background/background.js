@@ -7,6 +7,7 @@ const connectedPorts = [];
 // --- Audio metrics (from AudioWorklet) ---
 // Map of "tabId:src" → { rmsDb, peakDb, rms, peak, channelCount, sampleRate }
 const audioMetrics = new Map();
+let metricsThrottleTimer = null;
 
 // --- Audio focus stack ---
 let audioStack = [];
@@ -342,8 +343,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "audio-metrics") {
     const key = `${tabId}:${message.src}`;
     audioMetrics.set(key, message.metrics);
-    // Broadcast updated media (includes fresh metrics).
-    broadcastAllMedia();
+    // Throttle: only broadcast metrics updates ~4 times/sec.
+    if (!metricsThrottleTimer) {
+      metricsThrottleTimer = setTimeout(() => {
+        metricsThrottleTimer = null;
+        broadcastAllMedia();
+      }, 250);
+    }
     return;
   }
 
@@ -447,6 +453,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "media-removed") {
     tabMedia.delete(tabId);
+    for (const key of audioMetrics.keys()) {
+      if (key.startsWith(`${tabId}:`)) audioMetrics.delete(key);
+    }
     broadcastAllMedia();
     const hadEntries = audioStack.some((e) => e.tabId === tabId);
     audioStack = audioStack.filter((e) => e.tabId !== tabId);
@@ -467,6 +476,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Clean up when a tab is closed.
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabMedia.delete(tabId);
+  // Clean up metrics for this tab.
+  for (const key of audioMetrics.keys()) {
+    if (key.startsWith(`${tabId}:`)) audioMetrics.delete(key);
+  }
   const hadEntries = audioStack.some((e) => e.tabId === tabId);
   audioStack = audioStack.filter((e) => e.tabId !== tabId);
 

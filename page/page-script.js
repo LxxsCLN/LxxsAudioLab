@@ -111,17 +111,17 @@
         channelCount: el.mozChannelCount || 2,
       }, "*");
 
-      // Handle context resumption when tab becomes visible again.
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden && ctx.state === "suspended") {
-          ctx.resume();
-        }
-      });
-
     } catch (err) {
       console.error("[LxxsAudioLab] Failed to hook media element:", err);
     }
   }
+
+  // Resume AudioContext when tab becomes visible (added once, not per-element).
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && sharedCtx && sharedCtx.state === "suspended") {
+      sharedCtx.resume();
+    }
+  });
 
   // --- Scan and hook ---
 

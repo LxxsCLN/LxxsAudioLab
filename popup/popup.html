@@ -60,7 +60,6 @@
         font-size: 11px;
         font-weight: 600;
         color: #aaa;
-        text-transform: uppercase;
         letter-spacing: 0.5px;
       }
 
@@ -165,7 +164,6 @@
         font-size: 11px;
         font-weight: 600;
         color: #888;
-        text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 6px;
         padding-left: 2px;
@@ -322,12 +320,23 @@
 
     <div class="stack-section">
       <div class="stack-header">
-        <span class="stack-title">Overlay</span>
+        <span class="stack-title">Show Overlay</span>
         <label class="toggle">
           <input type="checkbox" id="overlay-toggle" />
           <span class="toggle-slider"></span>
         </label>
       </div>
+    </div>
+
+    <div class="stack-section">
+      <div class="stack-header">
+        <span class="stack-title">Audio Focus Stack</span>
+        <label class="toggle">
+          <input type="checkbox" id="stack-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div id="stack-list"></div>
     </div>
 
     <div class="stack-section">
@@ -347,17 +356,6 @@
           <input type="range" id="target-db-slider" min="-30" max="-6" value="-14" style="width:100px;accent-color:#4ec94e" />
         </div>
       </div>
-    </div>
-
-    <div class="stack-section">
-      <div class="stack-header">
-        <span class="stack-title">Audio Focus Stack</span>
-        <label class="toggle">
-          <input type="checkbox" id="stack-toggle" />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div id="stack-list"></div>
     </div>
 
     <div id="status">Scanning all tabs&hellip;</div>

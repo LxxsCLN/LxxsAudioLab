@@ -34,6 +34,11 @@ function shutdown() {
   contextValid = false;
   clearInterval(scanInterval);
   observer.disconnect();
+  offDomMedia.clear();
+  document.removeEventListener("play", onPlay, true);
+  document.removeEventListener("pause", onPause, true);
+  document.removeEventListener("volumechange", onVolumeChange, true);
+  document.removeEventListener("ended", onEnded, true);
 }
 
 // --- Inject page script into the page's JS world ---
@@ -225,61 +230,50 @@ const observer = new MutationObserver(() => scanForMedia());
 observer.observe(document.body, { childList: true, subtree: true });
 const scanInterval = setInterval(scanForMedia, 3000);
 
-document.addEventListener(
-  "play",
-  (e) => {
-    if (e.target.tagName === "VIDEO" || e.target.tagName === "AUDIO") {
-      if (!contextValid || isSuppressed()) return;
-      const el = e.target;
-      if (el.muted || el.volume === 0) return;
-      const info = describeMedia(el);
-      safeSendMessage({ type: "media-play", media: info });
-    }
-  },
-  true
-);
+function onPlay(e) {
+  if (e.target.tagName === "VIDEO" || e.target.tagName === "AUDIO") {
+    if (!contextValid || isSuppressed()) return;
+    const el = e.target;
+    if (el.muted || el.volume === 0) return;
+    const info = describeMedia(el);
+    safeSendMessage({ type: "media-play", media: info });
+  }
+}
 
-document.addEventListener(
-  "pause",
-  (e) => {
-    if (e.target.tagName === "VIDEO" || e.target.tagName === "AUDIO") {
-      if (!contextValid || isSuppressed()) return;
-      const info = describeMedia(e.target);
-      safeSendMessage({ type: "media-pause", media: info });
-    }
-  },
-  true
-);
+function onPause(e) {
+  if (e.target.tagName === "VIDEO" || e.target.tagName === "AUDIO") {
+    if (!contextValid || isSuppressed()) return;
+    const info = describeMedia(e.target);
+    safeSendMessage({ type: "media-pause", media: info });
+  }
+}
 
-document.addEventListener(
-  "volumechange",
-  (e) => {
-    if (e.target.tagName === "VIDEO" || e.target.tagName === "AUDIO") {
-      if (!contextValid || isSuppressed()) return;
-      const el = e.target;
-      const info = describeMedia(el);
-      if (el.muted || el.volume === 0) {
-        if (!el.paused) {
-          safeSendMessage({ type: "media-pause", media: info });
-        }
-      } else {
-        if (!el.paused) {
-          safeSendMessage({ type: "media-play", media: info });
-        }
+function onVolumeChange(e) {
+  if (e.target.tagName === "VIDEO" || e.target.tagName === "AUDIO") {
+    if (!contextValid || isSuppressed()) return;
+    const el = e.target;
+    const info = describeMedia(el);
+    if (el.muted || el.volume === 0) {
+      if (!el.paused) {
+        safeSendMessage({ type: "media-pause", media: info });
+      }
+    } else {
+      if (!el.paused) {
+        safeSendMessage({ type: "media-play", media: info });
       }
     }
-  },
-  true
-);
+  }
+}
 
-document.addEventListener(
-  "ended",
-  (e) => {
-    if (e.target.tagName === "VIDEO" || e.target.tagName === "AUDIO") {
-      if (!contextValid) return;
-      const info = describeMedia(e.target);
-      safeSendMessage({ type: "media-pause", media: info });
-    }
-  },
-  true
-);
+function onEnded(e) {
+  if (e.target.tagName === "VIDEO" || e.target.tagName === "AUDIO") {
+    if (!contextValid) return;
+    const info = describeMedia(e.target);
+    safeSendMessage({ type: "media-pause", media: info });
+  }
+}
+
+document.addEventListener("play", onPlay, true);
+document.addEventListener("pause", onPause, true);
+document.addEventListener("volumechange", onVolumeChange, true);
+document.addEventListener("ended", onEnded, true);

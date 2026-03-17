@@ -42,7 +42,10 @@ class AnalyzerProcessor extends AudioWorkletProcessor {
         }
       }
       if (e.data.type === "set-target-db") {
-        this._targetDb = e.data.value;
+        const val = e.data.value;
+        if (typeof val === "number" && val >= -60 && val <= 0) {
+          this._targetDb = val;
+        }
       }
     };
   }

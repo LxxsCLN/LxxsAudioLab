@@ -41,6 +41,20 @@
     <div class="overlay-body"></div>
     <div class="o-settings">
       <div class="o-setting-row">
+        <span class="o-setting-label">Show Overlay</span>
+        <label class="o-toggle">
+          <input type="checkbox" data-setting="show-overlay" />
+          <span class="o-toggle-track"></span>
+        </label>
+      </div>
+      <div class="o-setting-row">
+        <span class="o-setting-label">Audio Focus Stack</span>
+        <label class="o-toggle">
+          <input type="checkbox" data-setting="audio-stack" />
+          <span class="o-toggle-track"></span>
+        </label>
+      </div>
+      <div class="o-setting-row">
         <span class="o-setting-label">Normalize Loudness</span>
         <span class="o-setting-controls">
           <button class="o-expand-btn" data-expand="target-db" title="Advanced" style="background:none;border:none;color:#666;font-size:10px;cursor:pointer;padding:2px 4px">&#9660;</button>
@@ -53,21 +67,7 @@
       <div class="o-setting-row" data-row="target-db" style="display:none">
         <span class="o-setting-label">Target: <span data-target-value>-14</span> dB</span>
         <input type="range" data-setting="target-db" min="-30" max="-6" value="-14" style="width:80px;accent-color:#4ec94e" />
-      </div>
-      <div class="o-setting-row">
-        <span class="o-setting-label">Audio Focus Stack</span>
-        <label class="o-toggle">
-          <input type="checkbox" data-setting="audio-stack" />
-          <span class="o-toggle-track"></span>
-        </label>
-      </div>
-      <div class="o-setting-row">
-        <span class="o-setting-label">Show Overlay</span>
-        <label class="o-toggle">
-          <input type="checkbox" data-setting="show-overlay" />
-          <span class="o-toggle-track"></span>
-        </label>
-      </div>
+      </div>      
     </div>
   `;
 
