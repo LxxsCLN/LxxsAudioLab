@@ -11,7 +11,7 @@ let metricsThrottleTimer = null;
 
 // --- Audio focus stack ---
 let audioStack = [];
-let audioStackEnabled = false;
+let audioStackEnabled = true;
 
 // --- Overlay state ---
 let overlayVisible = false;

@@ -68,17 +68,17 @@ function renderMedia(mediaList) {
   listEl.innerHTML = "";
 
   if (!mediaList || mediaList.length === 0) {
-    statusEl.textContent = "No media playing across any tab.";
+    statusEl.textContent = "No media";
     listEl.innerHTML = `
       <div class="empty-state">
         No audio or video detected.<br/>
-        Try playing something on YouTube, Spotify, or any site with media.
+        Play something to get started.
       </div>
     `;
     return;
   }
 
-  statusEl.textContent = `${mediaList.length} media element(s) across ${countTabs(mediaList)} tab(s)`;
+  statusEl.textContent = `${mediaList.length} media \u00B7 ${countTabs(mediaList)} tab${countTabs(mediaList) !== 1 ? "s" : ""}`;
 
   const grouped = new Map();
   mediaList.forEach((m) => {
@@ -172,10 +172,11 @@ overlayToggle.addEventListener("change", () => {
 });
 
 const normalizeExpand = document.getElementById("normalize-expand");
+let targetDbVisible = false;
 normalizeExpand.addEventListener("click", () => {
-  const visible = targetDbRow.style.display === "none";
-  targetDbRow.style.display = visible ? "" : "none";
-  normalizeExpand.innerHTML = visible ? "&#9650;" : "&#9660;";
+  targetDbVisible = !targetDbVisible;
+  targetDbRow.style.display = targetDbVisible ? "block" : "none";
+  normalizeExpand.textContent = targetDbVisible ? "\u25B4" : "\u25BE";
 });
 
 normalizeToggle.addEventListener("change", () => {

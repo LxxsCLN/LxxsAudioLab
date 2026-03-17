@@ -1,7 +1,7 @@
 // Overlay UI — injected into every page, renders inside a Shadow DOM.
 
 (function () {
-  if (document.getElementById("lxxs-audio-lab-overlay")) return;
+  if (document.getElementById("audio-lab-overlay")) return;
 
   let overlayAlive = true;
   function safeSend(msg, callback) {
@@ -16,7 +16,7 @@
 
   // --- Create host element + shadow DOM ---
   const host = document.createElement("div");
-  host.id = "lxxs-audio-lab-overlay";
+  host.id = "audio-lab-overlay";
   const shadow = host.attachShadow({ mode: "closed" });
 
   // Load styles.
@@ -55,18 +55,15 @@
         </label>
       </div>
       <div class="o-setting-row">
-        <span class="o-setting-label">Normalize Loudness</span>
-        <span class="o-setting-controls">
-          <button class="o-expand-btn" data-expand="target-db" title="Advanced" style="background:none;border:none;color:#666;font-size:10px;cursor:pointer;padding:2px 4px">&#9660;</button>
-          <label class="o-toggle">
-            <input type="checkbox" data-setting="normalize" />
-            <span class="o-toggle-track"></span>
-          </label>
-        </span>
+        <span class="o-setting-label">Normalize Loudness <button class="o-expand-btn" data-expand="target-db" title="Advanced" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:13px;cursor:pointer;padding:0 3px;vertical-align:-1px;margin-left:2px">&#9662;</button></span>
+        <label class="o-toggle">
+          <input type="checkbox" data-setting="normalize" />
+          <span class="o-toggle-track"></span>
+        </label>
       </div>
       <div class="o-setting-row" data-row="target-db" style="display:none">
         <span class="o-setting-label">Target: <span data-target-value>-14</span> dB</span>
-        <input type="range" data-setting="target-db" min="-30" max="-6" value="-14" style="width:80px;accent-color:#4ec94e" />
+        <input type="range" data-setting="target-db" min="-30" max="-6" value="-14" style="width:120px;accent-color:#4ec94e" />
       </div>      
     </div>
   `;
@@ -128,7 +125,7 @@
   expandBtn.addEventListener("click", () => {
     const visible = targetDbRow.style.display === "none";
     targetDbRow.style.display = visible ? "" : "none";
-    expandBtn.innerHTML = visible ? "&#9650;" : "&#9660;";
+    expandBtn.textContent = visible ? "\u25B4" : "\u25BE";
   });
 
   normalizeToggle.addEventListener("change", () => {

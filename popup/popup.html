@@ -4,137 +4,201 @@
     <meta charset="utf-8" />
     <title>AudioLab</title>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
+
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
 
+      html {
+        background: transparent;
+      }
+
       body {
-        width: 360px;
+        width: 380px;
         overflow-y: auto;
-        font-family:
-          "Segoe UI",
-          system-ui,
-          -apple-system,
-          sans-serif;
+        font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
         font-size: 13px;
-        background: #1e1e1e;
-        color: #d4d4d4;
-        padding: 14px 14px 24px 14px;
+        background: #0c0c10;
+        color: rgba(255, 255, 255, 0.88);
+        padding: 20px 16px 28px 16px;
+        border-radius: 12px;
       }
 
-      h1 {
-        font-size: 15px;
-        font-weight: 600;
-        color: #e0e0e0;
-        margin-bottom: 12px;
+      body::-webkit-scrollbar {
+        width: 0;
       }
 
-      #status {
-        padding: 8px 12px;
-        background: #2d2d2d;
-        border-radius: 6px;
-        margin-bottom: 12px;
-        color: #888;
-        font-size: 12px;
+      /* --- Header --- */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        padding: 0 2px;
       }
 
-      /* --- Audio Stack Section --- */
-      .stack-section {
-        margin-bottom: 14px;
-        padding: 10px 12px;
-        background: #252530;
-        border: 1px solid #3e3e4e;
-        border-radius: 6px;
+      .header h1 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.3px;
       }
 
-      .stack-header {
+      .header-meta {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.45);
+        font-weight: 500;
+      }
+
+      /* --- Settings cards --- */
+      .setting-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+        transition: background 0.2s;
+      }
+
+      .setting-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 8px;
       }
 
-      .stack-title {
-        font-size: 11px;
-        font-weight: 600;
-        color: #aaa;
-        letter-spacing: 0.5px;
+      .setting-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.82);
       }
 
+      .setting-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* --- iOS-style toggle --- */
       .toggle {
         position: relative;
-        width: 36px;
-        height: 20px;
+        width: 44px;
+        height: 26px;
         cursor: pointer;
+        flex-shrink: 0;
       }
 
       .toggle input {
         opacity: 0;
         width: 0;
         height: 0;
+        position: absolute;
       }
 
       .toggle-slider {
         position: absolute;
         inset: 0;
-        background: #3e3e3e;
-        border-radius: 10px;
-        transition: background 0.2s;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 13px;
+        transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .toggle-slider::before {
         content: "";
         position: absolute;
-        width: 16px;
-        height: 16px;
+        width: 22px;
+        height: 22px;
         left: 2px;
         top: 2px;
-        background: #888;
+        background: #fff;
         border-radius: 50%;
-        transition:
-          transform 0.2s,
-          background 0.2s;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
       }
 
       .toggle input:checked + .toggle-slider {
-        background: #2a4a2a;
+        background: #30d158;
       }
 
       .toggle input:checked + .toggle-slider::before {
-        transform: translateX(16px);
-        background: #4ec94e;
+        transform: translateX(18px);
       }
 
+      /* --- Expand button --- */
+      .expand-btn {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 13px;
+        cursor: pointer;
+        padding: 0 3px;
+        border-radius: 4px;
+        transition: color 0.15s;
+        line-height: 1;
+        vertical-align: -1px;
+        margin-left: 3px;
+      }
+
+      .expand-btn:hover {
+        color: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      /* --- Target dB slider --- */
+      .slider-row {
+        padding: 10px 0 0 0;
+        display: none;
+      }
+
+      .slider-row .setting-row {
+        gap: 12px;
+      }
+
+      .slider-label {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      input[type="range"] {
+        accent-color: #4ec94e;
+      }
+
+      /* --- Stack list --- */
       .stack-list {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
+        margin-top: 10px;
       }
 
       .stack-entry {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 11px;
-        color: #777;
-        padding: 3px 0;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.35);
+        padding: 4px 0;
       }
 
       .stack-entry:last-child {
-        color: #e0e0e0;
+        color: rgba(255, 255, 255, 0.88);
         font-weight: 600;
       }
 
       .stack-pos {
-        color: #555;
+        color: rgba(255, 255, 255, 0.2);
         min-width: 16px;
         text-align: center;
+        font-size: 11px;
+        font-weight: 600;
       }
 
       .stack-entry:last-child .stack-pos {
-        color: #4ec94e;
+        color: #30d158;
       }
 
       .stack-name {
@@ -143,184 +207,204 @@
         text-overflow: ellipsis;
       }
 
-      .stack-empty {
-        font-size: 11px;
-        color: #555;
-        font-style: italic;
-      }
-
+      .stack-empty,
       .stack-disabled {
-        font-size: 11px;
-        color: #555;
-        font-style: italic;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.35);
+        padding: 4px 0;
+        margin-top: 6px;
       }
 
-      /* --- Media List --- */
+      /* --- Status bar --- */
+      #status {
+        padding: 0 2px;
+        margin-bottom: 12px;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 11px;
+        font-weight: 500;
+      }
+
+      /* --- Tab groups --- */
       .tab-group {
-        margin-bottom: 14px;
+        margin-bottom: 12px;
       }
 
       .tab-header {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 600;
-        color: #888;
-        letter-spacing: 0.5px;
-        margin-bottom: 6px;
-        padding-left: 2px;
+        color: rgba(255, 255, 255, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 8px;
+        padding-left: 4px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
+      /* --- Media cards --- */
       .media-card {
-        background: #2d2d2d;
-        border: 1px solid #3e3e3e;
-        border-radius: 6px;
-        padding: 10px 12px;
-        margin-bottom: 6px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
         cursor: pointer;
-        transition:
-          border-color 0.15s,
-          background 0.15s;
       }
 
       .media-card:hover {
-        border-color: #5e5e5e;
-        background: #333;
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(255, 255, 255, 0.1);
       }
 
       .media-name {
         font-weight: 600;
-        color: #e0e0e0;
-        margin-bottom: 3px;
+        color: rgba(255, 255, 255, 0.92);
+        margin-bottom: 2px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         font-size: 13px;
+        letter-spacing: -0.1px;
       }
 
       .media-meta {
         font-size: 11px;
-        color: #666;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 400;
       }
 
       .card-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 6px;
+        margin-top: 8px;
       }
 
       .badges {
         display: flex;
-        gap: 6px;
+        gap: 5px;
+        align-items: center;
       }
 
-      .btn-play-pause {
-        background: none;
-        border: 1px solid #4e4e4e;
-        border-radius: 4px;
-        color: #aaa;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 2px 10px;
-        cursor: pointer;
-        transition:
-          border-color 0.15s,
-          color 0.15s,
-          background 0.15s;
-        flex-shrink: 0;
-      }
-
-      .btn-play-pause:hover {
-        border-color: #7e7e7e;
-        color: #e0e0e0;
-        background: #3a3a3a;
-      }
-
+      /* --- Badges --- */
       .badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 3px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3px 8px;
+        border-radius: 6px;
         font-size: 10px;
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.2px;
       }
 
       .badge.playing {
-        background: #1a3a1a;
-        color: #4ec94e;
+        background: rgba(48, 209, 88, 0.12);
+        color: #30d158;
       }
 
       .badge.paused {
-        background: #3a3a1a;
-        color: #c9c94e;
+        background: rgba(255, 214, 10, 0.1);
+        color: rgba(255, 214, 10, 0.7);
       }
 
       .badge.classification {
-        background: #2a2a3a;
-        color: #888;
-        min-width: 52px;
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.45);
+        min-width: 50px;
         text-align: center;
       }
 
       .badge.classification.silent {
-        background: #2a2a2a;
-        color: #666;
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.2);
       }
 
       .badge.classification.quiet {
-        background: #1a2a3a;
-        color: #5b9bd5;
+        background: rgba(10, 132, 255, 0.1);
+        color: #0a84ff;
       }
 
       .badge.classification.normal {
-        background: #1a3a1a;
-        color: #4ec94e;
+        background: rgba(48, 209, 88, 0.1);
+        color: #30d158;
       }
 
       .badge.classification.loud {
-        background: #3a1a1a;
-        color: #e05050;
+        background: rgba(255, 69, 58, 0.1);
+        color: #ff453a;
       }
 
+      /* --- Play/pause button --- */
+      .btn-play-pause {
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        border-radius: 8px;
+        color: rgba(255, 255, 255, 0.8);
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 14px;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s, transform 0.1s;
+        flex-shrink: 0;
+      }
+
+      .btn-play-pause:hover {
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+      }
+
+      .btn-play-pause:active {
+        transform: scale(0.95);
+      }
+
+      /* --- Empty state --- */
       .empty-state {
         text-align: center;
-        padding: 30px 20px;
-        color: #555;
-        font-size: 12px;
-        line-height: 1.5;
+        padding: 32px 20px;
+        color: rgba(255, 255, 255, 0.42);
+        font-size: 13px;
+        line-height: 1.6;
       }
 
+      /* --- Shortcuts --- */
       .shortcuts {
-        margin-top: 14px;
-        padding: 8px 12px;
-        background: #2d2d2d;
-        border-radius: 6px;
+        margin-top: 16px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 12px;
         font-size: 11px;
-        color: #666;
+        color: rgba(255, 255, 255, 0.45);
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 5px;
       }
 
       .shortcuts kbd {
-        background: #3e3e3e;
-        color: #aaa;
-        padding: 1px 5px;
-        border-radius: 3px;
-        font-family: inherit;
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.6);
+        padding: 2px 6px;
+        border-radius: 5px;
+        font-family: "DM Sans", inherit;
         font-size: 10px;
+        font-weight: 600;
+        margin-right: 2px;
       }
     </style>
   </head>
   <body>
-    <h1>AudioLab</h1>
+    <div class="header">
+      <h1>AudioLab</h1>
+      <span class="header-meta" id="status">Scanning&hellip;</span>
+    </div>
 
-    <div class="stack-section">
-      <div class="stack-header">
-        <span class="stack-title">Show Overlay</span>
+    <div class="setting-card">
+      <div class="setting-row">
+        <span class="setting-label">Show Overlay</span>
         <label class="toggle">
           <input type="checkbox" id="overlay-toggle" />
           <span class="toggle-slider"></span>
@@ -328,42 +412,38 @@
       </div>
     </div>
 
-    <div class="stack-section">
-      <div class="stack-header">
-        <span class="stack-title">Audio Focus Stack</span>
+    <div class="setting-card">
+      <div class="setting-row">
+        <span class="setting-label">Audio Focus Stack</span>
         <label class="toggle">
           <input type="checkbox" id="stack-toggle" />
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <div id="stack-list"></div>
+      <div id="stack-list" class="stack-list"></div>
     </div>
 
-    <div class="stack-section">
-      <div class="stack-header">
-        <span class="stack-title">Normalize Loudness</span>
-        <div style="display:flex;align-items:center;gap:4px">
-          <button id="normalize-expand" title="Advanced" style="background:none;border:none;color:#666;font-size:10px;cursor:pointer;padding:2px 4px">&#9660;</button>
-          <label class="toggle">
-            <input type="checkbox" id="normalize-toggle" />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
+    <div class="setting-card">
+      <div class="setting-row">
+        <span class="setting-label">Normalize Loudness <button id="normalize-expand" class="expand-btn" title="Advanced">&#9662;</button></span>
+        <label class="toggle">
+          <input type="checkbox" id="normalize-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
       </div>
-      <div id="target-db-row" style="display:none;padding:6px 0 0 0">
-        <div class="stack-header">
-          <span class="stack-title" style="font-size:10px">Target: <span id="target-db-value">-14</span> dB</span>
-          <input type="range" id="target-db-slider" min="-30" max="-6" value="-14" style="width:100px;accent-color:#4ec94e" />
+      <div id="target-db-row" class="slider-row">
+        <div class="setting-row">
+          <span class="slider-label">Target: <span id="target-db-value">-14</span> dB</span>
+          <input type="range" id="target-db-slider" min="-30" max="-6" value="-14" style="width:160px;accent-color:#4ec94e" />
         </div>
       </div>
     </div>
 
-    <div id="status">Scanning all tabs&hellip;</div>
     <div id="media-list"></div>
 
     <div class="shortcuts">
-      <span><kbd>Alt+Shift+P</kbd> Play / Pause current audio</span>
-      <span><kbd>Alt+Shift+J</kbd> Jump to the playing tab</span>
+      <span><kbd>Alt+Shift+P</kbd> Play / Pause</span>
+      <span><kbd>Alt+Shift+J</kbd> Jump to tab</span>
     </div>
 
     <script src="popup.js"></script>
