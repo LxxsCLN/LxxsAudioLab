@@ -3,10 +3,20 @@
   "name": "AudioLab",
   "version": "0.1.0",
   "description": "Real-Time Web Audio Inspector + Loudness Normalizer",
-  "permissions": ["scripting", "activeTab", "tabs"],
+  "permissions": ["scripting", "activeTab", "tabs", "storage"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "AudioLab"
+    "default_title": "AudioLab",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "content_scripts": [
     {
@@ -20,7 +30,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["page/page-script.js", "overlay/overlay.css", "worklet/analyzer-processor.js"],
+      "resources": ["page/page-script.js", "overlay/overlay.css", "worklet/analyzer-processor.js", "fonts/DMSans-latin.woff2", "fonts/DMSans-latin-ext.woff2"],
       "matches": ["<all_urls>"]
     }
   ],

@@ -11,7 +11,7 @@ let metricsThrottleTimer = null;
 
 // --- Audio focus stack ---
 let audioStack = [];
-let audioStackEnabled = true;
+let audioStackEnabled = false;
 
 // --- Overlay state ---
 let overlayVisible = false;
@@ -19,6 +19,21 @@ let overlayVisible = false;
 // --- Normalization state ---
 let normalizeEnabled = false;
 let targetDb = -14;
+
+// --- Persist / restore settings ---
+chrome.storage.local.get(
+  ["overlayVisible", "audioStackEnabled", "normalizeEnabled", "targetDb"],
+  (result) => {
+    if (typeof result.overlayVisible === "boolean") overlayVisible = result.overlayVisible;
+    if (typeof result.audioStackEnabled === "boolean") audioStackEnabled = result.audioStackEnabled;
+    if (typeof result.normalizeEnabled === "boolean") normalizeEnabled = result.normalizeEnabled;
+    if (typeof result.targetDb === "number") targetDb = result.targetDb;
+  }
+);
+
+function saveSettings() {
+  chrome.storage.local.set({ overlayVisible, audioStackEnabled, normalizeEnabled, targetDb });
+}
 
 // --- Helpers ---
 
@@ -266,6 +281,7 @@ chrome.runtime.onConnect.addListener((port) => {
       } else {
         audioStack = [];
       }
+      saveSettings();
       broadcastStack();
       chrome.tabs.query({}, (tabs) => {
         for (const tab of tabs) {
@@ -295,6 +311,7 @@ chrome.runtime.onConnect.addListener((port) => {
         targetDb = msg.value;
         broadcastTargetDb();
       }
+      saveSettings();
     }
     if (msg.type === "get-overlay-state") {
       port.postMessage({ type: "overlay-state", visible: overlayVisible });
@@ -302,6 +319,7 @@ chrome.runtime.onConnect.addListener((port) => {
     }
     if (msg.type === "set-overlay-visible") {
       overlayVisible = msg.visible;
+      saveSettings();
       // Tell all tabs to show/hide the overlay.
       chrome.tabs.query({}, (tabs) => {
         for (const tab of tabs) {
@@ -368,6 +386,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "set-overlay-visible") {
     overlayVisible = message.visible;
+    saveSettings();
     // Broadcast to all tabs.
     chrome.tabs.query({}, (tabs) => {
       for (const tab of tabs) {
@@ -406,6 +425,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       targetDb = message.value;
       broadcastTargetDb();
     }
+    saveSettings();
     return;
   }
 

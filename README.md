@@ -14,8 +14,6 @@ Think of it as a **cross-tab media remote + audio DevTools**.
 
 - **Cross-Tab Media Detection** — Automatically detects all unmuted audio and video playing across every open tab. Shows the media name, source type, and play/pause state.
 
-- **Off-DOM Audio Detection** — Catches audio played via `new Audio()` (WhatsApp voice messages, Slack, etc.) that never appears in the DOM.
-
 - **Smart Muted Media Filtering** — Muted media is excluded entirely. Handles YouTube thumbnail previews, Twitter/X autoplay, Instagram reels. Media appears when unmuted, disappears when muted.
 
 - **Audio Name Extraction** — Pulls the name from the element's `title`, `aria-label`, YouTube-specific headings, or the page title as a fallback.
@@ -37,6 +35,8 @@ Think of it as a **cross-tab media remote + audio DevTools**.
 - **Global Keyboard Shortcuts**
   - `Alt+Shift+P` — Play/pause the current audio from anywhere
   - `Alt+Shift+J` — Jump to the tab that's currently playing
+
+- **Persistent Settings** — All preferences (overlay visibility, audio focus stack, loudness normalization, target dB) are saved to `chrome.storage.local` and restored automatically when the browser restarts.
 
 - **Settings** — Accessible from the overlay gear icon or popup toggles:
   - Overlay visibility on/off
@@ -86,7 +86,7 @@ AudioLab/
 │   ├── overlay.js                 # Overlay UI — injected via content script, Shadow DOM isolated
 │   └── overlay.css                # Overlay styles
 ├── page/
-│   └── page-script.js             # Runs in page context — AudioContext hooking, off-DOM detection
+│   └── page-script.js             # Runs in page context — AudioContext hooking, audio processing chain
 ├── worklet/
 │   └── analyzer-processor.js      # AudioWorklet — RMS/peak/dBFS computation, loudness normalization
 ├── popup/
@@ -101,7 +101,7 @@ The extension has three isolated JavaScript worlds communicating via Chrome's me
 
 1. **Content Script + Overlay** (`content/content.js`, `overlay/overlay.js`) — Injected into every page. Detects media elements, renders the overlay inside Shadow DOM, and bridges communication between the page script and background worker.
 
-2. **Page Script** (`page/page-script.js`) — Runs in the page's JS context. Hooks into media elements via `createMediaElementSource()`, builds the audio processing chain, intercepts off-DOM `new Audio()` playback, and forwards normalization commands to the AudioWorklet.
+2. **Page Script** (`page/page-script.js`) — Runs in the page's JS context. Hooks into media elements via `createMediaElementSource()`, builds the audio processing chain, and forwards normalization commands to the AudioWorklet.
 
 3. **AudioWorklet** (`worklet/analyzer-processor.js`) — Runs on the audio render thread. Computes RMS, peak, and dBFS from raw PCM samples. Applies loudness normalization with attack/release envelope smoothing.
 

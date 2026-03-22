@@ -62,12 +62,95 @@ function renderStack(stack, enabled) {
   });
 }
 
-// --- Media list rendering ---
+// --- Media list rendering (with in-place patching) ---
+
+// Track cards by key for in-place updates.
+const cardMap = new Map();
+let lastMediaOrder = "";
+
+function getClassification(m) {
+  let classLabel = "", classCss = "classification", dbDisplay = "";
+  if (m.metrics && !m.paused) {
+    const db = m.metrics.smoothedDb ?? m.metrics.rmsDb;
+    if (db <= -60) { classLabel = "Silent"; classCss = "classification silent"; }
+    else if (db <= -30) { classLabel = "Quiet"; classCss = "classification quiet"; }
+    else if (db <= -10) { classLabel = "Normal"; classCss = "classification normal"; }
+    else { classLabel = "Loud"; classCss = "classification loud"; }
+    dbDisplay = `${db} dB`;
+  }
+  return { classLabel, classCss, dbDisplay };
+}
+
+function patchCard(card, m) {
+  const stateBadge = card.querySelector('[data-role="state"]');
+  const classBadge = card.querySelector('[data-role="class"]');
+  const dbBadge = card.querySelector('[data-role="db"]');
+  const btn = card.querySelector(".btn-play-pause");
+
+  const stateClass = m.paused ? "paused" : "playing";
+  stateBadge.className = `badge ${stateClass}`;
+  stateBadge.textContent = m.paused ? "Paused" : "Playing";
+
+  const { classLabel, classCss, dbDisplay } = getClassification(m);
+  classBadge.className = `badge ${classCss}`;
+  classBadge.textContent = classLabel || "\u2014";
+
+  dbBadge.textContent = dbDisplay;
+  dbBadge.style.display = dbDisplay ? "" : "none";
+
+  btn.textContent = m.paused ? "Play" : "Pause";
+  card.dataset.paused = m.paused ? "1" : "0";
+}
+
+function createCard(m, tabId) {
+  const card = document.createElement("div");
+  card.className = "media-card";
+  card.title = "Click to jump to this tab";
+  card.dataset.paused = m.paused ? "1" : "0";
+
+  const stateClass = m.paused ? "paused" : "playing";
+  const stateLabel = m.paused ? "Paused" : "Playing";
+  const btnLabel = m.paused ? "Play" : "Pause";
+  const { classLabel, classCss, dbDisplay } = getClassification(m);
+
+  card.innerHTML = `
+    <div class="media-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</div>
+    <div class="media-meta">&lt;${m.tag}&gt;${m.metrics ? ` · ${m.metrics.sampleRate}Hz · ${m.metrics.channelCount}ch` : ""}</div>
+    <div class="card-row">
+      <div class="badges">
+        <span class="badge ${stateClass}" data-role="state">${stateLabel}</span>
+        <span class="badge ${classCss}" data-role="class">${classLabel || "\u2014"}</span>
+        <span class="badge classification" data-role="db" style="min-width:58px;${dbDisplay ? "" : "display:none"}">${dbDisplay}</span>
+      </div>
+      <button class="btn-play-pause">${btnLabel}</button>
+    </div>
+  `;
+
+  // Click the card body to jump to the tab.
+  card.addEventListener("click", (e) => {
+    if (e.target.classList.contains("btn-play-pause")) return;
+    port.postMessage({ type: "jump-to-tab", tabId });
+  });
+
+  // Play/pause button — reads current state from data attribute.
+  card.querySelector(".btn-play-pause").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isPaused = card.dataset.paused === "1";
+    port.postMessage({
+      type: "toggle-media",
+      tabId,
+      src: m.src,
+      action: isPaused ? "play" : "pause",
+    });
+  });
+
+  return card;
+}
 
 function renderMedia(mediaList) {
-  listEl.innerHTML = "";
-
   if (!mediaList || mediaList.length === 0) {
+    cardMap.clear();
+    lastMediaOrder = "";
     statusEl.textContent = "No media";
     listEl.innerHTML = `
       <div class="empty-state">
@@ -79,6 +162,22 @@ function renderMedia(mediaList) {
   }
 
   statusEl.textContent = `${mediaList.length} media \u00B7 ${countTabs(mediaList)} tab${countTabs(mediaList) !== 1 ? "s" : ""}`;
+
+  const newOrder = mediaList.map((m) => `${m.tabId}:${m.src}`).join("|");
+
+  // If the same cards exist in the same order, just patch dynamic parts in-place.
+  if (newOrder === lastMediaOrder) {
+    mediaList.forEach((m) => {
+      const card = cardMap.get(`${m.tabId}:${m.src}`);
+      if (card) patchCard(card, m);
+    });
+    return;
+  }
+
+  // Structure changed — full rebuild.
+  lastMediaOrder = newOrder;
+  cardMap.clear();
+  listEl.innerHTML = "";
 
   const grouped = new Map();
   mediaList.forEach((m) => {
@@ -99,57 +198,8 @@ function renderMedia(mediaList) {
     section.innerHTML = `<div class="tab-header" title="${escapeHtml(group.tabTitle)}">${escapeHtml(label)}</div>`;
 
     group.items.forEach((m) => {
-      const card = document.createElement("div");
-      card.className = "media-card";
-      card.title = "Click to jump to this tab";
-
-      const stateClass = m.paused ? "paused" : "playing";
-      const stateLabel = m.paused ? "Paused" : "Playing";
-      const btnLabel = m.paused ? "Play" : "Pause";
-
-      let classLabel = "";
-      let classCss = "classification";
-      let dbDisplay = "";
-      if (m.metrics && !m.paused) {
-        const db = m.metrics.smoothedDb ?? m.metrics.rmsDb;
-        if (db <= -60) { classLabel = "Silent"; classCss = "classification silent"; }
-        else if (db <= -30) { classLabel = "Quiet"; classCss = "classification quiet"; }
-        else if (db <= -10) { classLabel = "Normal"; classCss = "classification normal"; }
-        else { classLabel = "Loud"; classCss = "classification loud"; }
-        dbDisplay = `${db} dB`;
-      }
-
-      card.innerHTML = `
-        <div class="media-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</div>
-        <div class="media-meta">&lt;${m.tag}&gt;${m.metrics ? ` · ${m.metrics.sampleRate}Hz · ${m.metrics.channelCount}ch` : ""}</div>
-        <div class="card-row">
-          <div class="badges">
-            <span class="badge ${stateClass}">${stateLabel}</span>
-            ${classLabel ? `<span class="badge ${classCss}">${classLabel}</span>` : `<span class="badge classification">—</span>`}
-            ${dbDisplay ? `<span class="badge classification" style="min-width:58px">${dbDisplay}</span>` : ""}
-          </div>
-          <button class="btn-play-pause">${btnLabel}</button>
-        </div>
-      `;
-
-      // Click the card body to jump to the tab.
-      card.addEventListener("click", (e) => {
-        // Don't jump if they clicked the play/pause button.
-        if (e.target.classList.contains("btn-play-pause")) return;
-        port.postMessage({ type: "jump-to-tab", tabId });
-      });
-
-      // Play/pause button.
-      card.querySelector(".btn-play-pause").addEventListener("click", (e) => {
-        e.stopPropagation();
-        port.postMessage({
-          type: "toggle-media",
-          tabId,
-          src: m.src,
-          action: m.paused ? "play" : "pause",
-        });
-      });
-
+      const card = createCard(m, tabId);
+      cardMap.set(`${tabId}:${m.src}`, card);
       section.appendChild(card);
     });
 

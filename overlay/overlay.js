@@ -64,7 +64,7 @@
       <div class="o-setting-row" data-row="target-db" style="display:none">
         <span class="o-setting-label">Target: <span data-target-value>-14</span> dB</span>
         <input type="range" data-setting="target-db" min="-30" max="-6" value="-14" style="width:120px;accent-color:#4ec94e" />
-      </div>      
+      </div>
     </div>
   `;
 
@@ -180,7 +180,11 @@
     }
   });
 
-  // --- Rendering ---
+  // --- Rendering (with in-place patching) ---
+
+  const cardMap = new Map();
+  let lastMediaOrder = "";
+
   function escapeHtml(str) {
     const div = document.createElement("div");
     div.textContent = str;
@@ -195,75 +199,119 @@
     }
   }
 
-  function render(mediaList) {
-    body.innerHTML = "";
+  function getClassification(m) {
+    let classLabel = "", classColor = "", dbDisplay = "";
+    if (m.metrics && !m.paused) {
+      const db = m.metrics.smoothedDb ?? m.metrics.rmsDb;
+      if (db <= -60) { classLabel = "Silent"; classColor = "#666"; }
+      else if (db <= -30) { classLabel = "Quiet"; classColor = "#5b9bd5"; }
+      else if (db <= -10) { classLabel = "Normal"; classColor = "#4ec94e"; }
+      else { classLabel = "Loud"; classColor = "#e05050"; }
+      dbDisplay = `${db} dB`;
+    }
+    return { classLabel, classColor, dbDisplay };
+  }
 
+  function patchCard(card, m) {
+    const stateBadge = card.querySelector('[data-role="state"]');
+    const classBadge = card.querySelector('[data-role="class"]');
+    const dbLabel = card.querySelector('[data-role="db"]');
+    const btn = card.querySelector(".o-btn");
+
+    const stateClass = m.paused ? "paused" : "playing";
+    stateBadge.className = `o-badge ${stateClass}`;
+    stateBadge.textContent = m.paused ? "Paused" : "Playing";
+
+    const { classLabel, classColor, dbDisplay } = getClassification(m);
+    if (classLabel) {
+      classBadge.style.display = "";
+      classBadge.style.background = classColor + "22";
+      classBadge.style.color = classColor;
+      classBadge.textContent = classLabel;
+    } else {
+      classBadge.style.display = "none";
+    }
+
+    dbLabel.textContent = dbDisplay;
+    dbLabel.style.display = dbDisplay ? "" : "none";
+
+    btn.textContent = m.paused ? "Play" : "Pause";
+    card.dataset.paused = m.paused ? "1" : "0";
+  }
+
+  function createCard(m) {
+    const card = document.createElement("div");
+    card.className = "o-card";
+    card.dataset.paused = m.paused ? "1" : "0";
+
+    const stateClass = m.paused ? "paused" : "playing";
+    const stateLabel = m.paused ? "Paused" : "Playing";
+    const btnLabel = m.paused ? "Play" : "Pause";
+    const domain = getDomain(m.tabUrl || "");
+    const { classLabel, classColor, dbDisplay } = getClassification(m);
+
+    card.innerHTML = `
+      <div class="o-card-top">
+        <span class="o-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
+        <button class="o-btn">${btnLabel}</button>
+      </div>
+      <div class="o-meta">
+        <span class="o-badge ${stateClass}" data-role="state">${stateLabel}</span>
+        <span class="o-badge" data-role="class" style="${classLabel ? `background:${classColor}22;color:${classColor}` : "display:none"}">${classLabel}</span>
+        <span class="o-tab-label" data-role="db" style="min-width:45px;${dbDisplay ? "" : "display:none"}">${dbDisplay}</span>
+        <span class="o-tab-label">${escapeHtml(domain || m.tabTitle || "")}</span>
+      </div>
+    `;
+
+    // Click card → jump to tab.
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".o-btn")) return;
+      safeSend({ type: "jump-to-tab-from-content", tabId: m.tabId });
+    });
+
+    // Play/pause button — reads current state from data attribute.
+    card.querySelector(".o-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isPaused = card.dataset.paused === "1";
+      safeSend({
+        type: "toggle-media-from-content",
+        tabId: m.tabId,
+        src: m.src,
+        action: isPaused ? "play" : "pause",
+      });
+    });
+
+    return card;
+  }
+
+  function render(mediaList) {
     if (!mediaList || mediaList.length === 0) {
+      cardMap.clear();
+      lastMediaOrder = "";
       body.innerHTML = `<div class="o-empty">No media detected</div>`;
       return;
     }
 
+    const newOrder = mediaList.map((m) => `${m.tabId}:${m.src}`).join("|");
+
+    // If the same cards exist in the same order, just patch dynamic parts.
+    if (newOrder === lastMediaOrder) {
+      mediaList.forEach((m) => {
+        const card = cardMap.get(`${m.tabId}:${m.src}`);
+        if (card) patchCard(card, m);
+      });
+      return;
+    }
+
+    // Structure changed — full rebuild.
+    lastMediaOrder = newOrder;
+    cardMap.clear();
+    body.innerHTML = "";
+
     mediaList.forEach((m) => {
-      const card = document.createElement("div");
-      card.className = "o-card";
-
-      const stateClass = m.paused ? "paused" : "playing";
-      const stateLabel = m.paused ? "Paused" : "Playing";
-      const btnLabel = m.paused ? "Play" : "Pause";
-      const domain = getDomain(m.tabUrl || "");
-
-      // Audio classification from metrics.
-      let classLabel = "";
-      let classColor = "";
-      let dbDisplay = "";
-      if (m.metrics && !m.paused) {
-        const db = m.metrics.smoothedDb ?? m.metrics.rmsDb;
-        if (db <= -60) {
-          classLabel = "Silent";
-          classColor = "#666";
-        } else if (db <= -30) {
-          classLabel = "Quiet";
-          classColor = "#5b9bd5";
-        } else if (db <= -10) {
-          classLabel = "Normal";
-          classColor = "#4ec94e";
-        } else {
-          classLabel = "Loud";
-          classColor = "#e05050";
-        }
-        dbDisplay = `${db} dB`;
-      }
-
-      card.innerHTML = `
-        <div class="o-card-top">
-          <span class="o-name" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
-          <button class="o-btn">${btnLabel}</button>
-        </div>
-        <div class="o-meta">
-          <span class="o-badge ${stateClass}">${stateLabel}</span>
-          ${classLabel ? `<span class="o-badge" style="background:${classColor}22;color:${classColor}">${classLabel}</span>` : ""}
-          ${dbDisplay ? `<span class="o-tab-label" style="min-width:45px">${dbDisplay}</span>` : ""}
-          <span class="o-tab-label">${escapeHtml(domain || m.tabTitle || "")}</span>
-        </div>
-      `;
-
-      // Click card → jump to tab.
-      card.addEventListener("click", (e) => {
-        if (e.target.closest(".o-btn")) return;
-        safeSend({ type: "jump-to-tab-from-content", tabId: m.tabId });
-      });
-
-      // Play/pause button.
-      card.querySelector(".o-btn").addEventListener("click", (e) => {
-        e.stopPropagation();
-        safeSend({
-          type: "toggle-media-from-content",
-          tabId: m.tabId,
-          src: m.src,
-          action: m.paused ? "play" : "pause",
-        });
-      });
-
+      const key = `${m.tabId}:${m.src}`;
+      const card = createCard(m);
+      cardMap.set(key, card);
       body.appendChild(card);
     });
   }
