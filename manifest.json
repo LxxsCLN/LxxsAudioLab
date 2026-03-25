@@ -3,7 +3,7 @@
   "name": "AudioLab",
   "version": "0.1.0",
   "description": "Real-Time Web Audio Inspector + Loudness Normalizer",
-  "permissions": ["scripting", "activeTab", "tabs", "storage"],
+  "permissions": ["activeTab", "tabs", "storage"],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
